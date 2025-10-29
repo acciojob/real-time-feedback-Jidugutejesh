@@ -14,52 +14,64 @@ const App = () => {
     password: "",
   });
 
-  const handleChange = (e) => {
-    const { id, value } = e.target;
-
-    setFormData({ ...formData, [id]: value });
-
+  const validateField = (id, value) => {
     if (id === "name") {
-      if (value.trim() === "") {
-        setErrors((prev) => ({ ...prev, name: "Name is required" }));
-      } else {
-        setErrors((prev) => ({ ...prev, name: "" }));
-      }
+      if (value.trim() === "") return "Name is required";
+      return "";
     }
 
     if (id === "email") {
-      const emailPattern = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
-      if (!emailPattern.test(value)) {
-        setErrors((prev) => ({ ...prev, email: "Enter a valid email" }));
-      } else {
-        setErrors((prev) => ({ ...prev, email: "" }));
-      }
+      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailPattern.test(value)) return "Invalid email format"; 
+      return "";
     }
 
     if (id === "password") {
-      if (value.length < 6) {
-        setErrors((prev) => ({
-          ...prev,
-          password: "Password must be at least 6 characters",
-        }));
-      } else {
-        setErrors((prev) => ({ ...prev, password: "" }));
-      }
+      if (value.length < 6) return "Password must be at least 6 characters";
+      return "";
     }
+
+    return "";
+  };
+
+  const handleChange = (e) => {
+    const { id, value } = e.target;
+    setFormData((prev) => ({ ...prev, [id]: value }));
+
+    const err = validateField(id, value);
+    setErrors((prev) => ({ ...prev, [id]: err }));
+  };
+
+  const validateAll = () => {
+    const newErrors = {
+      name: validateField("name", formData.name),
+      email: validateField("email", formData.email),
+      password: validateField("password", formData.password),
+    };
+    setErrors(newErrors);
+    return !Object.values(newErrors).some((msg) => msg !== "");
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!errors.name && !errors.email && !errors.password) {
-      alert("Form submitted successfully!");
-    } else {
-      alert("Please fix the errors before submitting.");
+    const ok = validateAll();
+    if (!ok) {
+      const firstInvalid = Object.keys(errors).find((k) => errors[k]);
+      if (firstInvalid) {
+        const el = document.getElementById(firstInvalid);
+        if (el) el.focus();
+      }
+      return;
     }
+
+    alert("Form submitted successfully!");
+    setFormData({ name: "", email: "", password: "" });
+    setErrors({ name: "", email: "", password: "" });
   };
 
   return (
     <div className="main">
-      <form className="form-box" onSubmit={handleSubmit}>
+      <form className="form-box" onSubmit={handleSubmit} noValidate>
         <h2>Real-Time Feedback Form</h2>
 
         <label htmlFor="name">Name:</label>
